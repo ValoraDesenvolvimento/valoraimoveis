@@ -152,6 +152,49 @@ async function deleteStoredImage(
   await fs.unlink(filePath);
 }
 
+/** Apaga só as URLs informadas, e apenas se nenhum imóvel as referencia. */
+export async function discardUnreferencedImages(urls: string[]): Promise<{
+  deletedCount: number;
+  skippedCount: number;
+  errors: string[];
+}> {
+  const referenced = await collectReferencedImageKeys();
+  const { storage, items } = await listStoredImages();
+  const byPath = new Map(items.map((item) => [item.pathname, item]));
+  const errors: string[] = [];
+  let deletedCount = 0;
+  let skippedCount = 0;
+
+  const pending: StoredImage[] = [];
+  for (const url of urls) {
+    const key = imageUrlToStorageKey(url);
+    if (!key || referenced.has(key)) {
+      skippedCount += 1;
+      continue;
+    }
+    const stored = byPath.get(key);
+    pending.push(
+      stored ?? {
+        pathname: key,
+        filename: key.split("/").pop() || key,
+        url,
+      },
+    );
+  }
+
+  for (const item of pending) {
+    try {
+      await deleteStoredImage(storage === "none" ? "local" : storage, item);
+      deletedCount += 1;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Falha ao excluir imagem.";
+      errors.push(`${item.filename}: ${message}`);
+    }
+  }
+
+  return { deletedCount, skippedCount, errors };
+}
+
 export async function cleanupOrphanedImages(options?: {
   dryRun?: boolean;
 }): Promise<ImageCleanupResult> {

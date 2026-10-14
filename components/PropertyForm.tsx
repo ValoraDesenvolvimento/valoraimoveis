@@ -2,10 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { ArrowLeft, CloudUpload } from "lucide-react";
 import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
-import { ImageStorageCleanup } from "@/components/ImageStorageCleanup";
 import { ManagedImage } from "@/components/ManagedImage";
 import { PropertyAddressFields } from "@/components/PropertyAddressFields";
 import { useLoading } from "@/components/LoadingProvider";
@@ -158,8 +157,62 @@ export function PropertyForm({ initialProperty = null }: PropertyFormProps) {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [draggingPhotos, setDraggingPhotos] = useState(false);
   const [photoUpload, setPhotoUpload] = useState<UploadProgressUpdate | null>(null);
+  const [storageReady, setStorageReady] = useState(Boolean(initialProperty));
+  const sessionUploadsRef = useRef<string[]>([]);
   const uploadingPhotos =
     photoUpload !== null && photoUpload.phase !== "completed" && photoUpload.phase !== "error";
+
+  useEffect(() => {
+    if (initialProperty) return;
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        await fetch("/api/admin/cleanup-images?sweep=1", {
+          method: "POST",
+          credentials: "same-origin",
+        });
+      } catch {
+        // A criação segue mesmo se a limpeza anterior falhar.
+      } finally {
+        if (!cancelled) setStorageReady(true);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [initialProperty]);
+
+  useEffect(() => {
+    function discardSessionUploads() {
+      const urls = sessionUploadsRef.current.splice(0);
+      if (!urls.length) return;
+
+      const body = JSON.stringify({ urls });
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon(
+          "/api/admin/cleanup-images",
+          new Blob([body], { type: "application/json" }),
+        );
+        return;
+      }
+
+      void fetch("/api/admin/cleanup-images", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body,
+        keepalive: true,
+      });
+    }
+
+    window.addEventListener("pagehide", discardSessionUploads);
+    return () => {
+      window.removeEventListener("pagehide", discardSessionUploads);
+      discardSessionUploads();
+    };
+  }, []);
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -237,6 +290,17 @@ export function PropertyForm({ initialProperty = null }: PropertyFormProps) {
             setError(data.error || "Falha ao salvar.");
             return;
           }
+          const kept = new Set(payload.images);
+          const abandoned = sessionUploadsRef.current.filter((url) => !kept.has(url));
+          sessionUploadsRef.current = [];
+          if (abandoned.length) {
+            void fetch("/api/admin/cleanup-images", {
+              method: "POST",
+              credentials: "same-origin",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ urls: abandoned }),
+            });
+          }
           setMessage(status === "Publicado" ? "Imóvel publicado." : "Rascunho salvo.");
           setForm((current) => ({ ...current, status }));
           if (!initialProperty) {
@@ -273,7 +337,7 @@ export function PropertyForm({ initialProperty = null }: PropertyFormProps) {
   }
 
   async function onUpload(files: FileList | File[] | null) {
-    if (!files?.length || uploadingPhotos) return;
+    if (!files?.length || uploadingPhotos || !storageReady) return;
     setError(null);
     setMessage(null);
 
@@ -283,6 +347,7 @@ export function PropertyForm({ initialProperty = null }: PropertyFormProps) {
       const urls = await uploadPropertyImages(list, (progress) => {
         setPhotoUpload(progress);
       });
+      sessionUploadsRef.current.push(...urls);
       setForm((current) => ({
         ...current,
         images: [...current.images, ...urls],
@@ -317,7 +382,7 @@ export function PropertyForm({ initialProperty = null }: PropertyFormProps) {
     event.preventDefault();
     event.stopPropagation();
     setDraggingPhotos(false);
-    if (uploadingPhotos) return;
+    if (uploadingPhotos || !storageReady) return;
     const files = Array.from(event.dataTransfer.files).filter((file) =>
       file.type.startsWith("image/"),
     );
@@ -553,7 +618,7 @@ export function PropertyForm({ initialProperty = null }: PropertyFormProps) {
                 type="button"
                 variant="outline"
                 size="sm"
-                disabled={pending || uploadingPhotos}
+                disabled={pending || uploadingPhotos || !storageReady}
                 onClick={() => fileRef.current?.click()}
               >
                 Selecionar fotos
@@ -700,7 +765,7 @@ export function PropertyForm({ initialProperty = null }: PropertyFormProps) {
                 <button
                   type="button"
                   onClick={() => fileRef.current?.click()}
-                  disabled={pending || uploadingPhotos}
+                  disabled={pending || uploadingPhotos || !storageReady}
                   className="h-40 rounded-2xl border-2 border-dashed border-line flex flex-col items-center justify-center gap-2 px-4 text-center text-muted hover:border-brand hover:text-brand transition-colors disabled:opacity-50"
                 >
                   <CloudUpload className="h-5 w-5" />
@@ -710,9 +775,6 @@ export function PropertyForm({ initialProperty = null }: PropertyFormProps) {
                     várias fotos aqui
                   </span>
                 </button>
-              </div>
-              <div className="mt-6 border-t border-line pt-6">
-                <ImageStorageCleanup disabled={pending || uploadingPhotos} />
               </div>
             </CardContent>
           </Card>
