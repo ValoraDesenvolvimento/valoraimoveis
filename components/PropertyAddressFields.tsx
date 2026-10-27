@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchCitiesByState, matchCityInState } from "@/lib/brazil-cities";
 import { BRAZIL_STATES } from "@/lib/brazil-states";
 import { fetchAddressByCep, formatCep, normalizeCep } from "@/lib/cep";
@@ -51,6 +51,15 @@ export function PropertyAddressFields({
   const [cities, setCities] = useState<string[]>([]);
   const [loadingCities, setLoadingCities] = useState(false);
   const [loadingCep, setLoadingCep] = useState(false);
+  const onChangeRef = useRef(onChange);
+  const onCepMessageRef = useRef(onCepMessage);
+  const cityRef = useRef(values.city);
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+    onCepMessageRef.current = onCepMessage;
+    cityRef.current = values.city;
+  });
 
   useEffect(() => {
     const uf = values.state.trim().toUpperCase();
@@ -66,17 +75,17 @@ export function PropertyAddressFields({
       .then((list) => {
         if (cancelled) return;
         setCities(list);
-        if (values.city) {
-          const matched = matchCityInState(values.city, list);
-          if (matched && matched !== values.city) {
-            onChange({ city: matched });
-          }
+        const currentCity = cityRef.current;
+        if (!currentCity) return;
+        const matched = matchCityInState(currentCity, list);
+        if (matched && matched !== currentCity) {
+          onChangeRef.current({ city: matched });
         }
       })
       .catch(() => {
         if (cancelled) return;
         setCities([]);
-        onCepMessage?.("Não foi possível carregar a lista de cidades.");
+        onCepMessageRef.current?.("Não foi possível carregar a lista de cidades.");
       })
       .finally(() => {
         if (!cancelled) setLoadingCities(false);
@@ -85,7 +94,7 @@ export function PropertyAddressFields({
     return () => {
       cancelled = true;
     };
-  }, [values.state, onCepMessage]);
+  }, [values.state]);
 
   const cityOptions = useMemo(() => {
     if (!values.city) return cities;
