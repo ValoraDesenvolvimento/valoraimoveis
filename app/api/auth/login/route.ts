@@ -5,11 +5,27 @@ import {
   sessionCookieOptions,
   validateCredentials,
 } from "@/lib/auth";
+import { clientIpFromRequest, consumeRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
+const LOGIN_LIMIT = 10;
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+
 export async function POST(request: Request) {
   try {
+    const ip = clientIpFromRequest(request);
+    const limited = consumeRateLimit(`login:${ip}`, LOGIN_LIMIT, LOGIN_WINDOW_MS);
+    if (!limited.ok) {
+      return NextResponse.json(
+        { error: "Muitas tentativas. Aguarde e tente novamente." },
+        {
+          status: 429,
+          headers: { "Retry-After": String(limited.retryAfterSec) },
+        },
+      );
+    }
+
     const body = (await request.json()) as { email?: string; password?: string };
     const email = body.email?.trim() || "";
     const password = body.password || "";

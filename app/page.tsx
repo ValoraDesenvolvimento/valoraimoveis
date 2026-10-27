@@ -1,20 +1,46 @@
 import Image from "next/image";
 import Link from "next/link";
+import { FeaturedHighlightCarousel } from "@/components/FeaturedHighlightCarousel";
 import { HeroSearch } from "@/components/HeroSearch";
 import { PropertyCard } from "@/components/PropertyCard";
 import { SiteShell } from "@/components/SiteShell";
 import { categories, testimonials } from "@/lib/data";
-import { formatArea } from "@/lib/format";
-import { buildHeroFilterOptions, categoryHref } from "@/lib/property-filters";
-import { listProperties } from "@/lib/store";
+import { buildHeroFilterOptionsFromFacets, categoryHref } from "@/lib/property-filters";
+import { toPublicProperty } from "@/lib/public-property";
+import {
+  HOME_FEATURED_LIMIT,
+  HOME_HIGHLIGHT_LIMIT,
+} from "@/lib/property-query";
+import { getPublishedFacets, listPropertiesPage } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const properties = await listProperties({ publishedOnly: true });
-  const featured = properties.find((property) => property.highlight) ?? properties[0];
-  const grid = properties.filter((property) => property.featured && !property.highlight);
-  const filterOptions = buildHeroFilterOptions(properties);
+  const [facets, highlightsPage, featuredPage, fallbackPage] = await Promise.all([
+    getPublishedFacets(),
+    listPropertiesPage({
+      publishedOnly: true,
+      highlightOnly: true,
+      pageSize: HOME_HIGHLIGHT_LIMIT,
+    }),
+    listPropertiesPage({
+      publishedOnly: true,
+      featuredOnly: true,
+      excludeHighlight: true,
+      pageSize: HOME_FEATURED_LIMIT,
+    }),
+    listPropertiesPage({
+      publishedOnly: true,
+      pageSize: 1,
+    }),
+  ]);
+
+  const highlights = highlightsPage.items.map(toPublicProperty);
+  const featuredSlides = highlights.length
+    ? highlights
+    : fallbackPage.items.map(toPublicProperty);
+  const grid = featuredPage.items.map(toPublicProperty);
+  const filterOptions = buildHeroFilterOptionsFromFacets(facets);
 
   return (
     <SiteShell>
@@ -32,121 +58,46 @@ export default async function HomePage() {
         </div>
 
         <div className="relative z-10 min-h-svh flex flex-col">
-          <div className="flex-1 flex items-center w-full max-w-7xl mx-auto px-6 pt-28">
-            <h1 className="h-display text-5xl md:text-7xl lg:text-8xl leading-[1.1] text-white max-w-4xl">
+          <div className="flex-1 flex items-center w-full max-w-7xl mx-auto px-4 sm:px-6 pt-24 sm:pt-28">
+            <h1 className="h-display text-4xl sm:text-5xl md:text-7xl lg:text-8xl leading-[1.1] text-white max-w-4xl">
               O lugar certo para viver.
             </h1>
           </div>
-          <div className="w-full max-w-7xl mx-auto px-6 pb-10 md:pb-14">
+          <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 pb-8 sm:pb-10 md:pb-14">
             <HeroSearch options={filterOptions} />
           </div>
         </div>
       </header>
 
-      <section className="py-24 px-6 max-w-7xl mx-auto">
-        <div className="flex items-end justify-between mb-16">
-          <div>
-            <span className="text-xs uppercase tracking-widest text-brand font-bold mb-4 block">
+      <section className="py-16 sm:py-24 px-4 sm:px-6 max-w-7xl mx-auto">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-10 sm:mb-16">
+          <div className="min-w-0">
+            <span className="text-xs uppercase tracking-widest text-brand font-bold mb-3 sm:mb-4 block">
               Exclusividade
             </span>
-            <h2 className="h-display text-4xl md:text-6xl text-ink">Imóveis em destaque</h2>
+            <h2 className="h-display text-3xl sm:text-4xl md:text-6xl text-ink">
+              Imóveis em destaque
+            </h2>
           </div>
           <Link
             href="/imoveis"
-            className="hidden md:flex items-center gap-2 text-sm font-bold border-b border-ink pb-1 hover:text-brand hover:border-brand transition-colors"
+            className="inline-flex items-center gap-2 text-sm font-bold border-b border-ink pb-1 hover:text-brand hover:border-brand transition-colors self-start sm:self-auto"
           >
             Ver todo o catálogo
             <i className="fa-solid fa-arrow-right text-[10px]" />
           </Link>
         </div>
 
-        {featured ? (
+        {featuredSlides.length ? (
           <>
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 mb-24 items-start">
-              <Link
-                href={`/imoveis/${featured.slug}`}
-                className="lg:col-span-7 relative group cursor-pointer overflow-hidden rounded-3xl block"
-              >
-                <div className="relative h-[420px] lg:h-[500px]">
-                  <Image
-                    className="object-cover transition-transform duration-1000 group-hover:scale-110"
-                    src={featured.image}
-                    alt={featured.title}
-                    fill
-                    sizes="(max-width: 1024px) 100vw, 58vw"
-                  />
-                </div>
-                <div className="absolute top-6 left-6">
-                  <span className="bg-orange text-white text-[10px] uppercase tracking-widest px-4 py-2 rounded-full font-bold">
-                    Destaque do mês
-                  </span>
-                </div>
-              </Link>
-              <div className="lg:col-span-5 flex min-w-0 flex-col gap-8">
-                <div className="space-y-4">
-                  <p className="text-muted-foreground text-sm flex items-center gap-2">
-                    <i className="fa-solid fa-location-dot text-brand shrink-0" />
-                    <span className="line-clamp-2">{featured.location}</span>
-                  </p>
-                  <h3 className="h-display text-2xl md:text-3xl lg:text-4xl text-ink leading-tight line-clamp-3">
-                    {featured.title}
-                  </h3>
-                  {featured.description.length > 0 ? (
-                    <div className="space-y-3">
-                      <p className="text-muted-foreground text-sm md:text-base leading-relaxed line-clamp-4 overflow-hidden">
-                        {featured.description.join(" ")}
-                      </p>
-                      <Link
-                        href={`/imoveis/${featured.slug}`}
-                        className="inline-flex text-sm font-bold text-brand hover:underline"
-                      >
-                        Ver descrição completa
-                      </Link>
-                    </div>
-                  ) : null}
-                </div>
-
-                <div className="grid grid-cols-3 gap-4 sm:gap-6 py-8 border-y border-line">
-                  <div className="text-center">
-                    <i className="fa-solid fa-bed text-muted-foreground mb-2" />
-                    <p className="text-lg font-bold text-ink">{featured.bedrooms}</p>
-                    <p className="text-[10px] uppercase text-muted-foreground tracking-widest">Quartos</p>
-                  </div>
-                  <div className="text-center">
-                    <i className="fa-solid fa-car text-muted-foreground mb-2" />
-                    <p className="text-lg font-bold text-ink">{featured.parking}</p>
-                    <p className="text-[10px] uppercase text-muted-foreground tracking-widest">Vagas</p>
-                  </div>
-                  <div className="text-center">
-                    <i className="fa-solid fa-maximize text-muted-foreground mb-2" />
-                    <p className="text-lg font-bold text-ink">
-                      {formatArea(featured.area)}
-                    </p>
-                    <p className="text-[10px] uppercase text-muted-foreground tracking-widest">Área</p>
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1">Valor de Venda</p>
-                    <p className="text-2xl md:text-3xl font-light text-ink">{featured.priceLabel}</p>
-                  </div>
-                  <Link
-                    href={`/imoveis/${featured.slug}`}
-                    className="bg-ink text-white px-8 py-4 rounded-full text-sm font-bold hover:bg-brand transition-colors text-center shrink-0"
-                  >
-                    Ver Imóvel
-                  </Link>
-                </div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest">
-                  Ref: {featured.ref}
-                </p>
-              </div>
-            </div>
-
+            <FeaturedHighlightCarousel properties={featuredSlides} />
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {grid.map((property) => (
-                <PropertyCard key={property.slug} property={property} />
+              {grid.map((property, index) => (
+                <PropertyCard
+                  key={property.slug}
+                  property={property}
+                  priority={index < 2}
+                />
               ))}
             </div>
           </>
@@ -155,14 +106,16 @@ export default async function HomePage() {
         )}
       </section>
 
-      <section className="py-12 px-6 max-w-7xl mx-auto">
-        <h2 className="h-display text-4xl md:text-5xl mb-12 text-ink">Navegue por categorias</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <section className="py-12 px-4 sm:px-6 max-w-7xl mx-auto">
+        <h2 className="h-display text-3xl sm:text-4xl md:text-5xl mb-8 sm:mb-12 text-ink">
+          Navegue por categorias
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {categories.map((category) => (
             <Link
               key={category.name}
               href={categoryHref(category.name)}
-              className="relative aspect-square rounded-3xl overflow-hidden group cursor-pointer"
+              className="relative aspect-[4/3] sm:aspect-square rounded-2xl sm:rounded-3xl overflow-hidden group cursor-pointer"
             >
               <Image
                 className="object-cover object-center transition-transform duration-700 group-hover:scale-105"
@@ -172,7 +125,7 @@ export default async function HomePage() {
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-ink/70 to-transparent" />
-              <span className="absolute bottom-6 left-6 text-2xl font-medium text-white">
+              <span className="absolute bottom-5 left-5 sm:bottom-6 sm:left-6 text-xl sm:text-2xl font-medium text-white">
                 {category.name}
               </span>
             </Link>
@@ -180,14 +133,16 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="py-24 bg-surface">
-        <div className="max-w-7xl mx-auto px-6">
-          <h2 className="h-display text-4xl md:text-5xl mb-12 text-ink">O que dizem nossos clientes</h2>
-          <div className="flex gap-6 overflow-x-auto pb-8 scrollbar-hide">
+      <section className="py-16 sm:py-24 bg-surface">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <h2 className="h-display text-3xl sm:text-4xl md:text-5xl mb-8 sm:mb-12 text-ink">
+            O que dizem nossos clientes
+          </h2>
+          <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-8 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
             {testimonials.map((item) => (
               <div
                 key={item.name}
-                className="flex-none w-96 p-8 bg-white rounded-3xl border border-line shadow-sm"
+                className="flex-none w-[min(20rem,85vw)] sm:w-96 p-6 sm:p-8 bg-white rounded-3xl border border-line shadow-sm"
               >
                 <p className="text-muted-foreground mb-6 leading-relaxed">&ldquo;{item.quote}&rdquo;</p>
                 <div className="flex items-center gap-4">

@@ -6,7 +6,7 @@ export function Footer() {
   return (
     <footer className="bg-ink text-white pt-24 pb-12">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 mb-24">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-16 mb-24">
           <div className="space-y-8">
             <Image
               src="/Logovalorawhite.png"
@@ -21,12 +21,15 @@ export function Footer() {
             </p>
             <div className="flex gap-4">
               <a
-                href="#"
+                href={contact.instagramUrl}
+                target="_blank"
+                rel="noreferrer"
                 className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center hover:bg-brand hover:border-brand transition-all"
                 aria-label="Instagram"
               >
                 <i className="fa-brands fa-instagram text-sm" />
               </a>
+              {/* Temporariamente ocultos
               <a
                 href="#"
                 className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center hover:bg-brand hover:border-brand transition-all"
@@ -41,6 +44,7 @@ export function Footer() {
               >
                 <i className="fa-brands fa-linkedin-in text-sm" />
               </a>
+              */}
             </div>
           </div>
 
@@ -77,33 +81,27 @@ export function Footer() {
               Contato
             </h4>
             <ul className="space-y-4 text-sm text-muted-foreground">
-              <li className="flex items-start gap-3">
-                <i className="fa-solid fa-location-dot mt-1 text-brand" />
-                <span>
-                  {contact.addressLine1}
-                  <br />
-                  {contact.cityState}
-                </span>
-              </li>
               <li className="flex items-center gap-3">
-                <i className="fa-solid fa-phone text-brand" />
-                <span>{contact.phoneDisplay}</span>
+                <i className="fa-brands fa-whatsapp text-brand" />
+                <span>{contact.whatsappDisplay}</span>
               </li>
               <li className="flex items-center gap-3">
                 <i className="fa-solid fa-envelope text-brand" />
-                <span>{contact.email}</span>
+                <a href={`mailto:${contact.email}`} className="hover:text-brand transition-colors">
+                  {contact.email}
+                </a>
               </li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="text-xs uppercase tracking-widest text-muted-foreground font-bold mb-8">
-              Informações
-            </h4>
-            <ul className="space-y-4 text-sm text-muted-foreground">
-              <li>{contact.creci}</li>
-              <li>{contact.hoursWeekday}</li>
-              <li>{contact.hoursSaturday}</li>
+              <li className="flex items-center gap-3">
+                <i className="fa-brands fa-instagram text-brand" />
+                <a
+                  href={contact.instagramUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hover:text-brand transition-colors"
+                >
+                  {contact.instagramHandle}
+                </a>
+              </li>
             </ul>
           </div>
         </div>

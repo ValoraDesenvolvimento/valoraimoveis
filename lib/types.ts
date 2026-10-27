@@ -1,9 +1,17 @@
+import type { AddressDisplay } from "@/lib/address-display";
+
 export type PropertyStatus = "Publicado" | "Rascunho";
+export type IptuPeriod = "mensal" | "anual";
 
 export type Broker = {
   name: string;
   creci: string;
   avatar: string;
+};
+
+export type CustomField = {
+  label: string;
+  value: string;
 };
 
 export type Property = {
@@ -18,6 +26,10 @@ export type Property = {
   cep: string;
   address: string;
   number: string;
+  complement: string;
+  floors: number;
+  towers: number;
+  addressDisplay: AddressDisplay;
   latitude: string;
   longitude: string;
   type: string;
@@ -29,6 +41,7 @@ export type Property = {
   bedrooms: number;
   suites: number;
   bathrooms: number;
+  socialBathrooms: number;
   parking: number;
   area: number;
   builtArea: number;
@@ -37,13 +50,20 @@ export type Property = {
   images: string[];
   featured: boolean;
   highlight: boolean;
-  description: string[];
+  /** HTML sanitizado da descrição (rich text). */
+  description: string;
   condo: string;
+  condoExempt: boolean;
   iptu: string;
+  iptuPeriod: IptuPeriod;
+  iptuExempt: boolean;
   rooms: string[];
   leisure: string[];
   extras: string[];
   proximities: string[];
+  customFields: CustomField[];
+  roomsCustomFields: CustomField[];
+  locationCustomFields: CustomField[];
   broker: Broker;
   createdAt: string;
   updatedAt: string;

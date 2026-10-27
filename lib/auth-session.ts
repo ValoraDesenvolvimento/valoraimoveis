@@ -10,7 +10,12 @@ export type AdminSession = {
 };
 
 function getSecret() {
-  return process.env.ADMIN_SESSION_SECRET || "valora-dev-session-secret";
+  const secret = process.env.ADMIN_SESSION_SECRET?.trim();
+  if (secret) return secret;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("ADMIN_SESSION_SECRET é obrigatório em produção.");
+  }
+  return "valora-dev-session-secret";
 }
 
 function bytesToHex(bytes: ArrayBuffer) {

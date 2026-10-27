@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "@/lib/auth";
+import { toPublicProperty } from "@/lib/public-property";
 import { revalidatePropertyPages } from "@/lib/revalidate";
 import { deleteProperty, getPropertyById, updateProperty } from "@/lib/store";
 import type { PropertyInput } from "@/lib/types";
@@ -15,6 +17,15 @@ export async function GET(_request: Request, context: RouteContext) {
   if (!property) {
     return NextResponse.json({ error: "Imóvel não encontrado." }, { status: 404 });
   }
+
+  const session = await getServerSession();
+  if (!session) {
+    if (property.status !== "Publicado") {
+      return NextResponse.json({ error: "Imóvel não encontrado." }, { status: 404 });
+    }
+    return NextResponse.json(toPublicProperty(property));
+  }
+
   return NextResponse.json(property);
 }
 

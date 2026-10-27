@@ -24,8 +24,13 @@ export const metadata: Metadata = {
   description:
     "Redefinindo a experiência imobiliária com sofisticação, transparência e foco total na valorização do seu patrimônio.",
   icons: {
-    icon: [{ url: "/favicon.ico", sizes: "any" }],
-    shortcut: "/favicon.ico",
+    icon: [
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon.png", sizes: "256x256", type: "image/png" },
+      { url: "/favicon.ico", sizes: "any" },
+    ],
+    shortcut: "/favicon-32.png",
+    apple: [{ url: "/favicon.png", sizes: "256x256", type: "image/png" }],
   },
 };
 

@@ -179,3 +179,88 @@
     transform: translateY(-6px);
   }
 }
+
+.property-description {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.property-description p {
+  margin: 0 0 1rem;
+}
+
+.property-description p:last-child {
+  margin-bottom: 0;
+}
+
+.property-description h2 {
+  margin: 1.25rem 0 0.75rem;
+  font-family: var(--font-serif), serif;
+  font-size: clamp(1.25rem, 4vw, 1.5rem);
+  font-weight: 400;
+  line-height: 1.3;
+  color: #1c1917;
+}
+
+.property-description h3 {
+  margin: 1rem 0 0.5rem;
+  font-family: var(--font-serif), serif;
+  font-size: clamp(1.05rem, 3.5vw, 1.2rem);
+  font-weight: 400;
+  line-height: 1.35;
+  color: #1c1917;
+}
+
+.property-description h2:first-child,
+.property-description h3:first-child {
+  margin-top: 0;
+}
+
+.property-description ul,
+.property-description ol {
+  margin: 0 0 1rem;
+  padding-left: 1.35rem;
+}
+
+.property-description ul {
+  list-style: disc;
+}
+
+.property-description ol {
+  list-style: decimal;
+}
+
+.property-description li {
+  margin: 0.25rem 0;
+}
+
+.property-description li p {
+  margin: 0;
+}
+
+.property-description strong,
+.property-description b {
+  font-weight: 700;
+  color: #1c1917;
+}
+
+.property-description em,
+.property-description i {
+  font-style: italic;
+}
+
+.property-description blockquote {
+  margin: 0 0 1rem;
+  padding-left: 1rem;
+  border-left: 3px solid #d6d3d1;
+  color: #78716c;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before,
+.ProseMirror[data-placeholder]:empty::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: #a8a29e;
+}

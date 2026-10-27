@@ -1,3 +1,5 @@
+import { sanitizePortugueseText } from "@/lib/text-encoding";
+
 export type ViaCepAddress = {
   cep: string;
   logradouro: string;
@@ -24,15 +26,17 @@ export async function fetchAddressByCep(cep: string): Promise<ViaCepAddress | nu
   const response = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
   if (!response.ok) return null;
 
-  const data = (await response.json()) as ViaCepAddress & { erro?: boolean };
+  const buffer = await response.arrayBuffer();
+  const payload = new TextDecoder("utf-8").decode(buffer);
+  const data = JSON.parse(payload) as ViaCepAddress & { erro?: boolean };
   if (data.erro || !data.uf || !data.localidade) return null;
 
   return {
     cep: data.cep,
-    logradouro: data.logradouro || "",
-    complemento: data.complemento || "",
-    bairro: data.bairro || "",
-    localidade: data.localidade,
+    logradouro: sanitizePortugueseText(data.logradouro || ""),
+    complemento: sanitizePortugueseText(data.complemento || ""),
+    bairro: sanitizePortugueseText(data.bairro || ""),
+    localidade: sanitizePortugueseText(data.localidade),
     uf: data.uf,
   };
 }

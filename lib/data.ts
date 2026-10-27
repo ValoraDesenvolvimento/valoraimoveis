@@ -24,23 +24,25 @@ export const categories = [
 export const testimonials = [
   {
     quote:
-      "A Valora entendeu exatamente o que eu procurava. O processo foi transparente e rápido.",
+      "A Valora entendeu exatamente o que eu procurava. O processo de compra foi transparente e rápido.",
     name: "Mariana Costa",
     detail: "Comprou em Vila Nova",
     avatar:
       "https://storage.googleapis.com/uxpilot-auth.appspot.com/gen_417e24b606_5a01761d8020d365.png",
   },
   {
-    quote: "Profissionalismo de alto nível. Venderam meu imóvel acima do preço de mercado.",
+    quote:
+      "Profissionalismo de alto nível. Me apresentaram opções certas e me acompanharam até a assinatura.",
     name: "Ricardo Mendes",
-    detail: "Vendeu em Jardins",
+    detail: "Comprou em Jardins",
     avatar:
       "https://storage.googleapis.com/uxpilot-auth.appspot.com/gen_413682cfea_530d087343069610.png",
   },
   {
-    quote: "Atendimento humanizado e personalizado. Recomendo para quem busca qualidade.",
+    quote:
+      "Atendimento humanizado e personalizado. Recomendo para quem busca comprar com segurança.",
     name: "Ana & Pedro Silva",
-    detail: "Primeiro imóvel",
+    detail: "Compraram o primeiro imóvel",
     avatar:
       "https://storage.googleapis.com/uxpilot-auth.appspot.com/gen_ab6a2e6093_e092df3a6a659c77.png",
   },

@@ -4,17 +4,19 @@ import Link from "next/link";
 import { Heart } from "lucide-react";
 import { useFavorites } from "@/components/FavoritesProvider";
 import { ManagedImage } from "@/components/ManagedImage";
-import { formatArea } from "@/lib/format";
+import { buildCompactPublicStats } from "@/lib/property-type-fields";
 import type { Property } from "@/lib/types";
 
 type PropertyCardProps = {
   property: Property;
   highlight?: boolean;
+  priority?: boolean;
 };
 
-export function PropertyCard({ property, highlight }: PropertyCardProps) {
+export function PropertyCard({ property, highlight, priority = false }: PropertyCardProps) {
   const { isFavorite, toggleFavorite } = useFavorites();
   const favorited = isFavorite(property.slug);
+  const stats = buildCompactPublicStats(property);
 
   return (
     <Link
@@ -28,6 +30,8 @@ export function PropertyCard({ property, highlight }: PropertyCardProps) {
           alt={property.title}
           fill
           sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          priority={priority}
+          loading={priority ? "eager" : "lazy"}
         />
         <button
           type="button"
@@ -67,20 +71,19 @@ export function PropertyCard({ property, highlight }: PropertyCardProps) {
           <h3 className="text-xl font-medium text-ink group-hover:text-brand transition-colors">
             {property.title}
           </h3>
-          <p className="text-muted text-sm">{property.location}</p>
+          {property.location ? (
+            <p className="text-muted text-sm">{property.location}</p>
+          ) : null}
         </div>
-        <div className="flex items-center gap-4 py-4 border-y border-line text-xs text-muted">
-          <span className="flex items-center gap-1">
-            <i className="fa-solid fa-bed" /> {property.bedrooms}
-          </span>
-          <span className="flex items-center gap-1">
-            <i className="fa-solid fa-bath" /> {property.bathrooms}
-          </span>
-          <span className="flex items-center gap-1">
-            <i className="fa-solid fa-car" /> {property.parking}
-          </span>
-          <span className="ml-auto">{formatArea(property.area)}</span>
-        </div>
+        {stats.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 py-4 border-y border-line text-xs text-muted">
+            {stats.map((item) => (
+              <span key={item.label} className="flex items-center gap-1">
+                <i className={`fa-solid ${item.icon}`} /> {item.value}
+              </span>
+            ))}
+          </div>
+        ) : null}
         <div className="flex items-center justify-between">
           <p className="text-2xl font-light text-ink">{property.priceLabel}</p>
           <span className="text-[10px] text-muted">Ref: {property.ref}</span>

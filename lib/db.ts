@@ -144,6 +144,10 @@ export async function createSchema() {
         cep VARCHAR(16) NOT NULL DEFAULT '',
         address VARCHAR(255) NOT NULL DEFAULT '',
         number VARCHAR(32) NOT NULL DEFAULT '',
+        complement VARCHAR(64) NOT NULL DEFAULT '',
+        floors INT NOT NULL DEFAULT 0,
+        towers INT NOT NULL DEFAULT 0,
+        address_display VARCHAR(32) NOT NULL DEFAULT 'street',
         latitude VARCHAR(32) NOT NULL DEFAULT '',
         longitude VARCHAR(32) NOT NULL DEFAULT '',
         type VARCHAR(64) NOT NULL DEFAULT 'Casa',
@@ -155,6 +159,7 @@ export async function createSchema() {
         bedrooms INT NOT NULL DEFAULT 0,
         suites INT NOT NULL DEFAULT 0,
         bathrooms INT NOT NULL DEFAULT 0,
+        social_bathrooms INT NOT NULL DEFAULT 0,
         parking INT NOT NULL DEFAULT 0,
         area DECIMAL(14,2) NOT NULL DEFAULT 0,
         built_area DECIMAL(14,2) NOT NULL DEFAULT 0,
@@ -165,11 +170,17 @@ export async function createSchema() {
         highlight TINYINT(1) NOT NULL DEFAULT 0,
         description JSON NOT NULL,
         condo VARCHAR(64) NOT NULL DEFAULT '',
+        condo_exempt TINYINT(1) NOT NULL DEFAULT 0,
         iptu VARCHAR(64) NOT NULL DEFAULT '',
+        iptu_period VARCHAR(16) NOT NULL DEFAULT 'anual',
+        iptu_exempt TINYINT(1) NOT NULL DEFAULT 0,
         rooms JSON NOT NULL,
         leisure JSON NOT NULL,
         extras JSON NOT NULL,
         proximities JSON NOT NULL,
+        custom_fields JSON NOT NULL,
+        rooms_custom_fields JSON NULL,
+        location_custom_fields JSON NULL,
         broker JSON NOT NULL,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -208,6 +219,10 @@ export async function createSchema() {
       cep TEXT NOT NULL DEFAULT '',
       address TEXT NOT NULL DEFAULT '',
       number TEXT NOT NULL DEFAULT '',
+      complement TEXT NOT NULL DEFAULT '',
+      floors INTEGER NOT NULL DEFAULT 0,
+      towers INTEGER NOT NULL DEFAULT 0,
+      address_display TEXT NOT NULL DEFAULT 'street',
       latitude TEXT NOT NULL DEFAULT '',
       longitude TEXT NOT NULL DEFAULT '',
       type TEXT NOT NULL DEFAULT 'Casa',
@@ -219,6 +234,7 @@ export async function createSchema() {
       bedrooms INTEGER NOT NULL DEFAULT 0,
       suites INTEGER NOT NULL DEFAULT 0,
       bathrooms INTEGER NOT NULL DEFAULT 0,
+      social_bathrooms INTEGER NOT NULL DEFAULT 0,
       parking INTEGER NOT NULL DEFAULT 0,
       area NUMERIC NOT NULL DEFAULT 0,
       built_area NUMERIC NOT NULL DEFAULT 0,
@@ -229,11 +245,17 @@ export async function createSchema() {
       highlight BOOLEAN NOT NULL DEFAULT FALSE,
       description JSONB NOT NULL DEFAULT '[]'::jsonb,
       condo TEXT NOT NULL DEFAULT '',
+      condo_exempt BOOLEAN NOT NULL DEFAULT FALSE,
       iptu TEXT NOT NULL DEFAULT '',
+      iptu_period TEXT NOT NULL DEFAULT 'anual',
+      iptu_exempt BOOLEAN NOT NULL DEFAULT FALSE,
       rooms JSONB NOT NULL DEFAULT '[]'::jsonb,
       leisure JSONB NOT NULL DEFAULT '[]'::jsonb,
       extras JSONB NOT NULL DEFAULT '[]'::jsonb,
       proximities JSONB NOT NULL DEFAULT '[]'::jsonb,
+      custom_fields JSONB NOT NULL DEFAULT '[]'::jsonb,
+      rooms_custom_fields JSONB NOT NULL DEFAULT '[]'::jsonb,
+      location_custom_fields JSONB NOT NULL DEFAULT '[]'::jsonb,
       broker JSONB NOT NULL DEFAULT '{}'::jsonb,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -258,11 +280,118 @@ export async function createSchema() {
   await dbExecute(`CREATE INDEX IF NOT EXISTS idx_admin_users_default ON admin_users (is_default)`);
 }
 
+async function ensurePropertyColumnUpgrades() {
+  const provider = getDbProvider();
+
+  if (provider === "postgres") {
+    await dbExecute(`ALTER TABLE properties ADD COLUMN IF NOT EXISTS complement TEXT NOT NULL DEFAULT ''`);
+    await dbExecute(`ALTER TABLE properties ADD COLUMN IF NOT EXISTS floors INTEGER NOT NULL DEFAULT 0`);
+    await dbExecute(`ALTER TABLE properties ADD COLUMN IF NOT EXISTS towers INTEGER NOT NULL DEFAULT 0`);
+    // address_display DEFAULT 'all' na migração: imóveis antigos mantêm endereço completo
+    // no público até o admin escolher outra política. Novos cadastros usam "street" no form.
+    await dbExecute(
+      `ALTER TABLE properties ADD COLUMN IF NOT EXISTS address_display TEXT NOT NULL DEFAULT 'all'`,
+    );
+    await dbExecute(
+      `ALTER TABLE properties ADD COLUMN IF NOT EXISTS iptu_period TEXT NOT NULL DEFAULT 'anual'`,
+    );
+    await dbExecute(
+      `ALTER TABLE properties ADD COLUMN IF NOT EXISTS custom_fields JSONB NOT NULL DEFAULT '[]'::jsonb`,
+    );
+    await dbExecute(
+      `ALTER TABLE properties ADD COLUMN IF NOT EXISTS location_custom_fields JSONB NOT NULL DEFAULT '[]'::jsonb`,
+    );
+    await dbExecute(
+      `ALTER TABLE properties ADD COLUMN IF NOT EXISTS rooms_custom_fields JSONB NOT NULL DEFAULT '[]'::jsonb`,
+    );
+    await dbExecute(
+      `ALTER TABLE properties ADD COLUMN IF NOT EXISTS condo_exempt BOOLEAN NOT NULL DEFAULT FALSE`,
+    );
+    await dbExecute(
+      `ALTER TABLE properties ADD COLUMN IF NOT EXISTS iptu_exempt BOOLEAN NOT NULL DEFAULT FALSE`,
+    );
+    await dbExecute(
+      `ALTER TABLE properties ADD COLUMN IF NOT EXISTS social_bathrooms INTEGER NOT NULL DEFAULT 0`,
+    );
+    await dbExecute(`UPDATE properties SET complement = '' WHERE complement IS NULL`);
+    await dbExecute(`UPDATE properties SET floors = 0 WHERE floors IS NULL`);
+    await dbExecute(`UPDATE properties SET towers = 0 WHERE towers IS NULL`);
+    await dbExecute(`UPDATE properties SET social_bathrooms = 0 WHERE social_bathrooms IS NULL`);
+    await dbExecute(`UPDATE properties SET condo_exempt = FALSE WHERE condo_exempt IS NULL`);
+    await dbExecute(`UPDATE properties SET iptu_exempt = FALSE WHERE iptu_exempt IS NULL`);
+    await dbExecute(`UPDATE properties SET iptu_period = 'anual' WHERE iptu_period IS NULL OR iptu_period = ''`);
+    await dbExecute(
+      `UPDATE properties SET custom_fields = '[]'::jsonb WHERE custom_fields IS NULL`,
+    );
+    await dbExecute(
+      `UPDATE properties SET location_custom_fields = '[]'::jsonb WHERE location_custom_fields IS NULL`,
+    );
+    await dbExecute(
+      `UPDATE properties SET rooms_custom_fields = '[]'::jsonb WHERE rooms_custom_fields IS NULL`,
+    );
+    await dbExecute(
+      `UPDATE properties SET address_display = 'all' WHERE address_display IS NULL OR address_display = ''`,
+    );
+    return;
+  }
+
+  const columns = [
+    ["complement", "VARCHAR(64) NOT NULL DEFAULT ''"],
+    ["floors", "INT NOT NULL DEFAULT 0"],
+    ["towers", "INT NOT NULL DEFAULT 0"],
+    ["address_display", "VARCHAR(32) NOT NULL DEFAULT 'all'"],
+    ["iptu_period", "VARCHAR(16) NOT NULL DEFAULT 'anual'"],
+    ["custom_fields", "JSON NULL"],
+    ["rooms_custom_fields", "JSON NULL"],
+    ["location_custom_fields", "JSON NULL"],
+    ["condo_exempt", "TINYINT(1) NOT NULL DEFAULT 0"],
+    ["iptu_exempt", "TINYINT(1) NOT NULL DEFAULT 0"],
+    ["social_bathrooms", "INT NOT NULL DEFAULT 0"],
+  ] as const;
+
+  for (const [name, definition] of columns) {
+    try {
+      await dbExecute(`ALTER TABLE properties ADD COLUMN ${name} ${definition}`);
+    } catch {
+      // coluna já existe
+    }
+  }
+
+  try {
+    await dbExecute(`UPDATE properties SET complement = '' WHERE complement IS NULL`);
+    await dbExecute(`UPDATE properties SET floors = 0 WHERE floors IS NULL`);
+    await dbExecute(`UPDATE properties SET towers = 0 WHERE towers IS NULL`);
+    await dbExecute(`UPDATE properties SET social_bathrooms = 0 WHERE social_bathrooms IS NULL`);
+    await dbExecute(`UPDATE properties SET condo_exempt = 0 WHERE condo_exempt IS NULL`);
+    await dbExecute(`UPDATE properties SET iptu_exempt = 0 WHERE iptu_exempt IS NULL`);
+    await dbExecute(
+      `UPDATE properties SET iptu_period = 'anual' WHERE iptu_period IS NULL OR iptu_period = ''`,
+    );
+    await dbExecute(
+      `UPDATE properties SET custom_fields = JSON_ARRAY() WHERE custom_fields IS NULL`,
+    );
+    await dbExecute(
+      `UPDATE properties SET location_custom_fields = JSON_ARRAY() WHERE location_custom_fields IS NULL`,
+    );
+    await dbExecute(
+      `UPDATE properties SET rooms_custom_fields = JSON_ARRAY() WHERE rooms_custom_fields IS NULL`,
+    );
+    await dbExecute(
+      `UPDATE properties SET address_display = 'all' WHERE address_display IS NULL OR address_display = ''`,
+    );
+  } catch {
+    // backfill best-effort
+  }
+}
+
 let dbReady: Promise<void> | null = null;
 
 export async function ensureDbReady() {
   if (!dbReady) {
-    dbReady = createSchema();
+    dbReady = (async () => {
+      await createSchema();
+      await ensurePropertyColumnUpgrades();
+    })();
   }
   await dbReady;
 }

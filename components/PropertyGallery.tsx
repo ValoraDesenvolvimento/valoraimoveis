@@ -94,6 +94,7 @@ export function PropertyGallery({ images, title }: PropertyGalleryProps) {
                 alt=""
                 fill
                 sizes="25vw"
+                loading="lazy"
                 unoptimized={isManagedUploadUrl(src)}
               />
             </button>

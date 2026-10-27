@@ -1,3 +1,5 @@
+import { resolveCityName, sanitizePortugueseText } from "@/lib/text-encoding";
+
 const citiesCache = new Map<string, string[]>();
 
 export async function fetchCitiesByState(uf: string): Promise<string[]> {
@@ -14,10 +16,21 @@ export async function fetchCitiesByState(uf: string): Promise<string[]> {
     throw new Error("Não foi possível carregar as cidades.");
   }
 
-  const data = (await response.json()) as { nome: string }[];
-  const cities = data.map((item) => item.nome).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  // Decodifica explicitamente como UTF-8 para evitar � em nomes como Jaraguá.
+  const buffer = await response.arrayBuffer();
+  const payload = new TextDecoder("utf-8").decode(buffer);
+  const data = JSON.parse(payload) as { nome: string }[];
+  const cities = data
+    .map((item) => sanitizePortugueseText(item.nome))
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b, "pt-BR"));
+
   citiesCache.set(normalized, cities);
   return cities;
+}
+
+export function matchCityInState(city: string, cities: string[]) {
+  return resolveCityName(city, cities);
 }
 
 export function clearCitiesCacheForTests() {

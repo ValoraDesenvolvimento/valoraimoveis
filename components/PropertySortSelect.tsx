@@ -17,6 +17,8 @@ export function PropertySortSelect() {
 
   function handleChange(next: string) {
     const params = Object.fromEntries(searchParams.entries()) as Record<string, string>;
+    // Trocar ordenação volta para a página 1
+    delete params.pagina;
     router.push(
       buildImoveisHref({
         ...params,

@@ -54,6 +54,31 @@ function uniqueSorted(values: string[]) {
   );
 }
 
+export function buildPriceBands(prices: number[]): FilterOption[] {
+  const positive = prices.filter((price) => price > 0);
+  const min = positive.length ? Math.min(...positive) : 0;
+  const max = positive.length ? Math.max(...positive) : 0;
+  const priceBands: FilterOption[] = [];
+
+  if (!positive.length) return priceBands;
+  if (min < 1_000_000) {
+    priceBands.push({ value: "0-1000000", label: "Até R$ 1 milhão" });
+  }
+  if (max >= 1_000_000 && min < 5_000_000) {
+    priceBands.push({ value: "1000000-5000000", label: "R$ 1M – R$ 5M" });
+  }
+  if (max >= 5_000_000) {
+    priceBands.push({ value: "5000000+", label: "Acima de R$ 5M" });
+  }
+  if (!priceBands.length) {
+    priceBands.push({
+      value: `0-${max}`,
+      label: `Até ${formatPrice(max)}`,
+    });
+  }
+  return priceBands;
+}
+
 export function buildHeroFilterOptions(properties: Property[]): HeroFilterOptions {
   const locations = uniqueSorted(
     properties.map((item) => {
@@ -62,39 +87,28 @@ export function buildHeroFilterOptions(properties: Property[]): HeroFilterOption
     }),
   ).map((label) => ({ value: label, label }));
 
-  const types = uniqueSorted(properties.map((item) => item.type)).map((label) => ({
-    value: label,
-    label,
-  }));
-
-  const prices = properties.map((item) => item.price).filter((price) => price > 0);
-  const min = prices.length ? Math.min(...prices) : 0;
-  const max = prices.length ? Math.max(...prices) : 0;
-
-  const priceBands: FilterOption[] = [];
-  if (prices.length) {
-    if (min < 1_000_000) {
-      priceBands.push({ value: "0-1000000", label: "Até R$ 1 milhão" });
-    }
-    if (max >= 1_000_000 && min < 5_000_000) {
-      priceBands.push({ value: "1000000-5000000", label: "R$ 1M – R$ 5M" });
-    }
-    if (max >= 5_000_000) {
-      priceBands.push({ value: "5000000+", label: "Acima de R$ 5M" });
-    }
-    if (!priceBands.length) {
-      priceBands.push({
-        value: `0-${max}`,
-        label: `Até ${formatPrice(max)}`,
-      });
-    }
-  }
-
   return {
     locations,
-    types,
-    prices: priceBands,
+    types: uniqueSorted(properties.map((item) => item.type)).map((label) => ({
+      value: label,
+      label,
+    })),
+    prices: buildPriceBands(properties.map((item) => item.price)),
     refs: uniqueSorted(properties.map((item) => item.ref)),
+  };
+}
+
+export function buildHeroFilterOptionsFromFacets(facets: {
+  locations: string[];
+  types: string[];
+  prices: number[];
+  refs: string[];
+}): HeroFilterOptions {
+  return {
+    locations: facets.locations.map((label) => ({ value: label, label })),
+    types: facets.types.map((label) => ({ value: label, label })),
+    prices: buildPriceBands(facets.prices),
+    refs: facets.refs,
   };
 }
 
@@ -112,6 +126,18 @@ export function buildListFilterOptions(properties: Property[]) {
       value,
       label: value,
     })),
+  };
+}
+
+export function buildListFilterOptionsFromFacets(facets: {
+  types: string[];
+  cities: string[];
+  neighborhoods: string[];
+}) {
+  return {
+    types: facets.types.map((value) => ({ value, label: value })),
+    cities: facets.cities.map((value) => ({ value, label: value })),
+    neighborhoods: facets.neighborhoods.map((value) => ({ value, label: value })),
   };
 }
 

@@ -1,4 +1,7 @@
-import type { Broker, Property } from "@/lib/types";
+import { normalizeAddressDisplay } from "@/lib/address-display";
+import { normalizeDescriptionHtml } from "@/lib/description-html";
+import { hydrateProperty } from "@/lib/property-display";
+import type { Broker, CustomField, IptuPeriod, Property } from "@/lib/types";
 
 export type PropertyRow = {
   id: string;
@@ -12,6 +15,10 @@ export type PropertyRow = {
   cep: string;
   address: string;
   number: string;
+  complement?: string | null;
+  floors?: number | string | null;
+  towers?: number | string | null;
+  address_display?: string | null;
   latitude: string;
   longitude: string;
   type: string;
@@ -23,6 +30,7 @@ export type PropertyRow = {
   bedrooms: number;
   suites: number;
   bathrooms: number;
+  social_bathrooms?: number | string | null;
   parking: number;
   area: string | number;
   built_area: string | number;
@@ -33,11 +41,17 @@ export type PropertyRow = {
   highlight: boolean;
   description: unknown;
   condo: string;
+  condo_exempt?: boolean | number | null;
   iptu: string;
+  iptu_period?: string | null;
+  iptu_exempt?: boolean | number | null;
   rooms: unknown;
   leisure: unknown;
   extras: unknown;
   proximities: unknown;
+  custom_fields?: unknown;
+  rooms_custom_fields?: unknown;
+  location_custom_fields?: unknown;
   broker: unknown;
   created_at: string | Date;
   updated_at: string | Date;
@@ -59,6 +73,29 @@ function asStringArray(value: unknown): string[] {
   return Array.isArray(parsed)
     ? parsed.filter((item): item is string => typeof item === "string")
     : [];
+}
+
+function asCustomFields(value: unknown): CustomField[] {
+  const parsed = parseJsonValue(value);
+  if (!Array.isArray(parsed)) return [];
+  return parsed
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const record = item as Partial<CustomField>;
+      const label = typeof record.label === "string" ? record.label.trim() : "";
+      const fieldValue = typeof record.value === "string" ? record.value.trim() : "";
+      if (!label || !fieldValue) return null;
+      return { label, value: fieldValue };
+    })
+    .filter((item): item is CustomField => Boolean(item));
+}
+
+function asIptuPeriod(value: unknown): IptuPeriod {
+  return value === "mensal" ? "mensal" : "anual";
+}
+
+function asBooleanFlag(value: unknown): boolean {
+  return value === true || value === 1 || value === "1" || value === "true";
 }
 
 function asBroker(value: unknown): Broker {
@@ -89,7 +126,7 @@ function toNumber(value: string | number) {
 }
 
 export function rowToProperty(row: PropertyRow): Property {
-  return {
+  return hydrateProperty({
     id: row.id,
     slug: row.slug,
     title: row.title,
@@ -98,39 +135,50 @@ export function rowToProperty(row: PropertyRow): Property {
     city: row.city,
     neighborhood: row.neighborhood,
     state: row.state,
-    cep: row.cep,
-    address: row.address,
-    number: row.number,
-    latitude: row.latitude,
-    longitude: row.longitude,
+    cep: row.cep ?? "",
+    address: row.address ?? "",
+    number: row.number ?? "",
+    complement: row.complement ?? "",
+    floors: toNumber(row.floors ?? 0),
+    towers: toNumber(row.towers ?? 0),
+    addressDisplay: normalizeAddressDisplay(row.address_display),
+    latitude: row.latitude ?? "",
+    longitude: row.longitude ?? "",
     type: row.type,
     typeLabel: row.type_label,
     price: toNumber(row.price),
     priceLabel: row.price_label,
     ref: row.ref,
     status: row.status as Property["status"],
-    bedrooms: row.bedrooms,
-    suites: row.suites,
-    bathrooms: row.bathrooms,
-    parking: row.parking,
+    bedrooms: toNumber(row.bedrooms ?? 0),
+    suites: toNumber(row.suites ?? 0),
+    bathrooms: toNumber(row.bathrooms ?? 0),
+    socialBathrooms: toNumber(row.social_bathrooms ?? 0),
+    parking: toNumber(row.parking ?? 0),
     area: toNumber(row.area),
     builtArea: toNumber(row.built_area),
     landArea: toNumber(row.land_area),
-    image: row.image,
+    image: row.image ?? "",
     images: asStringArray(row.images),
-    featured: row.featured,
-    highlight: row.highlight,
-    description: asStringArray(row.description),
-    condo: row.condo,
-    iptu: row.iptu,
+    featured: asBooleanFlag(row.featured),
+    highlight: asBooleanFlag(row.highlight),
+    description: normalizeDescriptionHtml(row.description),
+    condo: row.condo ?? "",
+    condoExempt: asBooleanFlag(row.condo_exempt),
+    iptu: row.iptu ?? "",
+    iptuPeriod: asIptuPeriod(row.iptu_period),
+    iptuExempt: asBooleanFlag(row.iptu_exempt),
     rooms: asStringArray(row.rooms),
     leisure: asStringArray(row.leisure),
     extras: asStringArray(row.extras),
     proximities: asStringArray(row.proximities),
+    customFields: asCustomFields(row.custom_fields),
+    roomsCustomFields: asCustomFields(row.rooms_custom_fields),
+    locationCustomFields: asCustomFields(row.location_custom_fields),
     broker: asBroker(row.broker),
     createdAt: toIso(row.created_at),
     updatedAt: toIso(row.updated_at),
-  };
+  });
 }
 
 export function rowsToProperties(rows: PropertyRow[]) {
