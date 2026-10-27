@@ -61,7 +61,7 @@ export default function SobrePage() {
             <p className="text-lg text-muted-foreground leading-relaxed">
               Nossa atuação combina estratégia, conhecimento e um olhar criterioso para selecionar
               imóveis que ofereçam qualidade, segurança e bom investimento. Em alguns casos,
-              realizamos reformas para potencializar o valor e a experiência do imóvel. Em outros,
+              realizamos reformas para potencializar o valor e a apresentação do imóvel. Em outros,
               disponibilizamos imóveis prontos, cuidadosamente escolhidos para atender às
               necessidades de quem busca comprar com confiança.
             </p>

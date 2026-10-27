@@ -2,8 +2,17 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useTransition } from "react";
-import { ArrowLeft, ChevronLeft, ChevronRight, CloudUpload, Info, Plus, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import {
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  CloudUpload,
+  Info,
+  Plus,
+  Trash2,
+  X,
+} from "lucide-react";
 import Image from "next/image";
 import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import { ManagedImage } from "@/components/ManagedImage";
@@ -218,6 +227,8 @@ export function PropertyForm({ initialProperty = null }: PropertyFormProps) {
   const [dragPhotoIndex, setDragPhotoIndex] = useState<number | null>(null);
   const [dropPhotoIndex, setDropPhotoIndex] = useState<number | null>(null);
   const [selectedPhotos, setSelectedPhotos] = useState<number[]>([]);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewIndex, setPreviewIndex] = useState(0);
   const [customFieldLabel, setCustomFieldLabel] = useState("");
   const [customFieldValue, setCustomFieldValue] = useState("");
   const [roomsFieldLabel, setRoomsFieldLabel] = useState("");
@@ -546,8 +557,56 @@ export function PropertyForm({ initialProperty = null }: PropertyFormProps) {
     reorderImages(index, index + direction);
   }
 
+  const openPhotoPreview = useCallback((index: number) => {
+    setPreviewIndex(index);
+    setPreviewOpen(true);
+  }, []);
+
+  const showPreviousPreview = useCallback(() => {
+    setPreviewIndex((current) =>
+      form.images.length === 0
+        ? 0
+        : current === 0
+          ? form.images.length - 1
+          : current - 1,
+    );
+  }, [form.images.length]);
+
+  const showNextPreview = useCallback(() => {
+    setPreviewIndex((current) =>
+      form.images.length === 0
+        ? 0
+        : current === form.images.length - 1
+          ? 0
+          : current + 1,
+    );
+  }, [form.images.length]);
+
+  useEffect(() => {
+    if (!previewOpen) return;
+    if (form.images.length === 0) {
+      setPreviewOpen(false);
+      return;
+    }
+    if (previewIndex >= form.images.length) {
+      setPreviewIndex(form.images.length - 1);
+    }
+  }, [form.images.length, previewIndex, previewOpen]);
+
+  useEffect(() => {
+    if (!previewOpen) return;
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "ArrowLeft") showPreviousPreview();
+      if (event.key === "ArrowRight") showNextPreview();
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [previewOpen, showNextPreview, showPreviousPreview]);
+
   return (
-    <div className="p-4 sm:p-6 md:p-10 max-w-[1500px] mx-auto overflow-x-hidden">
+    <div className="p-4 sm:p-6 md:p-10 max-w-[1500px] mx-auto">
       <div className="mb-8">
         <Button asChild variant="ghost" className="h-auto px-0 text-muted hover:bg-transparent">
           <Link href={TEAM_IMOVIES}>
@@ -567,8 +626,8 @@ export function PropertyForm({ initialProperty = null }: PropertyFormProps) {
         </Alert>
       )}
 
-      <div className="grid xl:grid-cols-[1fr_320px] gap-8">
-        <div className="space-y-6">
+      <div className="grid xl:grid-cols-[minmax(0,1fr)_320px] gap-8 items-start">
+        <div className="min-w-0 space-y-6">
           <Card className="p-0">
             <CardHeader className="p-7 pb-0">
               <CardTitle className="h-display text-2xl font-normal">Informações básicas</CardTitle>
@@ -1355,7 +1414,7 @@ export function PropertyForm({ initialProperty = null }: PropertyFormProps) {
                 </div>
               ) : null}
               <div
-                className={`grid md:grid-cols-3 gap-4 rounded-2xl transition-colors ${
+                className={`grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-2xl transition-colors ${
                   draggingPhotos && !uploadingPhotos && dragPhotoIndex === null
                     ? "outline-2 outline-dashed outline-brand bg-brand/5 p-3 -m-3"
                     : ""
@@ -1364,6 +1423,7 @@ export function PropertyForm({ initialProperty = null }: PropertyFormProps) {
                 {form.images.map((src, index) => {
                   const selected = selectedPhotos.includes(index);
                   const isDropTarget = dropPhotoIndex === index && dragPhotoIndex !== null;
+                  const isCover = index === form.coverIndex;
                   return (
                     <div
                       key={`${src}::${index}`}
@@ -1394,86 +1454,103 @@ export function PropertyForm({ initialProperty = null }: PropertyFormProps) {
                         setDropPhotoIndex(null);
                         setDraggingPhotos(false);
                       }}
-                      className={`relative h-40 cursor-grab rounded-2xl overflow-hidden border-2 active:cursor-grabbing ${
-                        index === form.coverIndex ? "border-brand" : "border-line"
+                      className={`cursor-grab overflow-hidden rounded-2xl border-2 bg-white active:cursor-grabbing ${
+                        isCover ? "border-brand" : "border-line"
                       } ${selected ? "ring-2 ring-brand/40" : ""} ${
                         isDropTarget ? "border-dashed border-brand" : ""
                       } ${dragPhotoIndex === index ? "opacity-60" : ""}`}
                     >
-                      <ManagedImage
-                        className="pointer-events-none object-cover"
-                        src={src}
-                        alt=""
-                        fill
-                        sizes="(max-width: 768px) 100vw, 33vw"
-                        draggable={false}
-                      />
-                      <label className="absolute left-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 shadow">
-                        <Checkbox
-                          checked={selected}
-                          onCheckedChange={() => togglePhotoSelection(index)}
-                          aria-label={`Selecionar foto ${index + 1}`}
+                      <button
+                        type="button"
+                        onClick={() => openPhotoPreview(index)}
+                        className="group relative block aspect-[4/3] w-full bg-surface text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset"
+                        aria-label={`Ampliar foto ${index + 1}`}
+                      >
+                        <ManagedImage
+                          className="pointer-events-none object-cover"
+                          src={src}
+                          alt=""
+                          fill
+                          sizes="(max-width: 640px) 100vw, 50vw"
+                          draggable={false}
                         />
-                      </label>
-                      {index === form.coverIndex && (
-                        <span className="absolute left-12 top-3 bg-brand text-white text-[10px] px-3 py-1 rounded-full font-bold">
-                          CAPA
+                        <span className="pointer-events-none absolute inset-0 flex items-end justify-center bg-black/0 pb-3 opacity-0 transition-all group-hover:bg-black/25 group-hover:opacity-100">
+                          <span className="rounded-full bg-black/65 px-3 py-1 text-xs font-medium text-white">
+                            Clique para ampliar
+                          </span>
                         </span>
-                      )}
-                      <div className="absolute inset-x-0 bottom-0 bg-ink/70 p-2 flex flex-wrap gap-1 justify-center">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-auto px-2 py-1 text-white hover:bg-white/10 hover:text-white"
-                          disabled={index === 0}
-                          onClick={() => moveImage(index, -1)}
-                          aria-label="Mover foto para a esquerda"
-                        >
-                          <ChevronLeft className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-auto px-2 py-1 text-white hover:bg-white/10 hover:text-white"
-                          disabled={index === form.images.length - 1}
-                          onClick={() => moveImage(index, 1)}
-                          aria-label="Mover foto para a direita"
-                        >
-                          <ChevronRight className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-auto py-1 text-white hover:bg-white/10 hover:text-white"
-                          onClick={() => {
-                            if (index === 0) return;
-                            setForm((current) => {
-                              const images = [...current.images];
-                              const [cover] = images.splice(index, 1);
-                              images.unshift(cover);
-                              return { ...current, images, coverIndex: 0 };
-                            });
-                            setSelectedPhotos([]);
-                          }}
-                        >
-                          Capa
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-auto py-1 text-red-300 hover:bg-white/10 hover:text-red-200"
-                          onClick={() => removeImage(index)}
-                        >
-                          Remover
-                        </Button>
+                      </button>
+
+                      <div className="space-y-2 border-t border-line bg-white p-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <label className="flex items-center gap-2 text-sm text-ink">
+                            <Checkbox
+                              checked={selected}
+                              onCheckedChange={() => togglePhotoSelection(index)}
+                              aria-label={`Selecionar foto ${index + 1}`}
+                            />
+                            <span className="font-medium">Foto {index + 1}</span>
+                          </label>
+                          {isCover ? (
+                            <span className="rounded-full bg-brand px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                              Capa
+                            </span>
+                          ) : null}
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-1">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-2"
+                            disabled={index === 0}
+                            onClick={() => moveImage(index, -1)}
+                            aria-label="Mover foto para a esquerda"
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-2"
+                            disabled={index === form.images.length - 1}
+                            onClick={() => moveImage(index, 1)}
+                            aria-label="Mover foto para a direita"
+                          >
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-8"
+                            disabled={isCover}
+                            onClick={() => {
+                              if (index === 0) return;
+                              setForm((current) => {
+                                const images = [...current.images];
+                                const [cover] = images.splice(index, 1);
+                                images.unshift(cover);
+                                return { ...current, images, coverIndex: 0 };
+                              });
+                              setSelectedPhotos([]);
+                            }}
+                          >
+                            Definir capa
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-8 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                            onClick={() => removeImage(index)}
+                          >
+                            Remover
+                          </Button>
+                        </div>
                       </div>
-                      <span className="absolute right-3 top-3 rounded-full bg-ink/70 px-2 py-0.5 text-[10px] font-bold text-white">
-                        {index + 1}
-                      </span>
                     </div>
                   );
                 })}
@@ -1481,7 +1558,7 @@ export function PropertyForm({ initialProperty = null }: PropertyFormProps) {
                   type="button"
                   onClick={() => fileRef.current?.click()}
                   disabled={pending || uploadingPhotos || !storageReady}
-                  className="h-40 rounded-2xl border-2 border-dashed border-line flex flex-col items-center justify-center gap-2 px-4 text-center text-muted hover:border-brand hover:text-brand transition-colors disabled:opacity-50"
+                  className="flex min-h-[12rem] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-line px-4 py-8 text-center text-muted transition-colors hover:border-brand hover:text-brand disabled:opacity-50"
                 >
                   <CloudUpload className="h-5 w-5" />
                   <span className="text-xs font-medium leading-snug">
@@ -1495,8 +1572,8 @@ export function PropertyForm({ initialProperty = null }: PropertyFormProps) {
           </Card>
         </div>
 
-        <aside>
-          <Card className="sticky top-32 p-0">
+        <aside className="xl:sticky xl:top-28 xl:self-start">
+          <Card className="p-0">
             <CardContent className="p-6">
               <p className="label">Publicação</p>
               <h3 className="font-bold text-lg mb-5">Resumo do imóvel</h3>
@@ -1586,6 +1663,86 @@ export function PropertyForm({ initialProperty = null }: PropertyFormProps) {
         loading={pending}
         onConfirm={() => void removeProperty()}
       />
+
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-[min(96vw,1200px)] w-full border-none bg-ink p-0 overflow-hidden rounded-3xl [&>button.absolute]:hidden">
+          <DialogTitle className="sr-only">
+            Visualizar foto {previewIndex + 1} de {form.images.length}
+          </DialogTitle>
+
+          {form.images[previewIndex] ? (
+            <div className="relative bg-black aspect-[4/3] md:aspect-[16/10]">
+              <ManagedImage
+                src={form.images[previewIndex]}
+                alt={`Foto ${previewIndex + 1}`}
+                fill
+                className="object-contain"
+                sizes="96vw"
+              />
+
+              <button
+                type="button"
+                onClick={() => setPreviewOpen(false)}
+                className="absolute top-4 right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
+                aria-label="Fechar visualização"
+              >
+                <X className="h-5 w-5" />
+              </button>
+
+              {form.images.length > 1 ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={showPreviousPreview}
+                    className="absolute left-4 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
+                    aria-label="Foto anterior"
+                  >
+                    <ChevronLeft className="h-6 w-6" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={showNextPreview}
+                    className="absolute right-4 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
+                    aria-label="Próxima foto"
+                  >
+                    <ChevronRight className="h-6 w-6" />
+                  </button>
+                </>
+              ) : null}
+
+              <div className="absolute bottom-4 left-1/2 z-10 -translate-x-1/2 rounded-full bg-black/60 px-4 py-2 text-sm font-bold text-white">
+                {previewIndex + 1} / {form.images.length}
+              </div>
+            </div>
+          ) : null}
+
+          {form.images.length > 1 ? (
+            <div className="flex gap-2 overflow-x-auto bg-ink p-4">
+              {form.images.map((src, index) => (
+                <button
+                  key={`${src}-preview-thumb-${index}`}
+                  type="button"
+                  onClick={() => setPreviewIndex(index)}
+                  className={`relative h-16 w-24 shrink-0 overflow-hidden rounded-xl border-2 transition-colors ${
+                    index === previewIndex
+                      ? "border-brand"
+                      : "border-transparent opacity-70 hover:opacity-100"
+                  }`}
+                  aria-label={`Ver foto ${index + 1}`}
+                >
+                  <ManagedImage
+                    src={src}
+                    alt=""
+                    fill
+                    className="object-cover"
+                    sizes="96px"
+                  />
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
