@@ -16,6 +16,7 @@ function baseRow(overrides: Partial<PropertyRow> = {}): PropertyRow {
     number: "10",
     complement: "",
     floors: 0,
+    units: 0,
     towers: 0,
     address_display: "street",
     latitude: "",

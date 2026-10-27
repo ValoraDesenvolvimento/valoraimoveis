@@ -28,6 +28,7 @@ export type Property = {
   number: string;
   complement: string;
   floors: number;
+  units: number;
   towers: number;
   addressDisplay: AddressDisplay;
   latitude: string;

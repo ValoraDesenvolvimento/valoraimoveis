@@ -17,6 +17,7 @@ export type PropertyRow = {
   number: string;
   complement?: string | null;
   floors?: number | string | null;
+  units?: number | string | null;
   towers?: number | string | null;
   address_display?: string | null;
   latitude: string;
@@ -140,6 +141,7 @@ export function rowToProperty(row: PropertyRow): Property {
     number: row.number ?? "",
     complement: row.complement ?? "",
     floors: toNumber(row.floors ?? 0),
+    units: toNumber(row.units ?? 0),
     towers: toNumber(row.towers ?? 0),
     addressDisplay: normalizeAddressDisplay(row.address_display),
     latitude: row.latitude ?? "",

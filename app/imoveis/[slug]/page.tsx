@@ -186,6 +186,7 @@ export default async function PropertyDetailsPage({ params }: PageProps) {
               />
               <FeatureBlock icon="fa-map-location" title="Proximidades" items={property.proximities} />
               {((fieldVisibility.floors && property.floors > 0) ||
+                (fieldVisibility.units && property.units > 0) ||
                 (fieldVisibility.towers && property.towers > 0) ||
                 (property.customFields?.length ?? 0) > 0 ||
                 (property.roomsCustomFields?.length ?? 0) > 0 ||
@@ -202,6 +203,12 @@ export default async function PropertyDetailsPage({ params }: PageProps) {
                       <div className="flex gap-2">
                         <dt className="font-medium text-ink">Andares:</dt>
                         <dd>{property.floors}</dd>
+                      </div>
+                    ) : null}
+                    {fieldVisibility.units && property.units > 0 ? (
+                      <div className="flex gap-2">
+                        <dt className="font-medium text-ink">Unidades:</dt>
+                        <dd>{property.units}</dd>
                       </div>
                     ) : null}
                     {fieldVisibility.towers && property.towers > 0 ? (

@@ -110,6 +110,7 @@ function normalizeProperty(
   const number = input.number?.trim() ?? existing?.number ?? "";
   const complement = input.complement?.trim() ?? existing?.complement ?? "";
   const floors = Number(input.floors ?? existing?.floors) || 0;
+  const units = Number(input.units ?? existing?.units) || 0;
   const towers = Number(input.towers ?? existing?.towers) || 0;
   const addressDisplay = normalizeAddressDisplay(
     input.addressDisplay ?? existing?.addressDisplay ?? "street",
@@ -151,6 +152,7 @@ function normalizeProperty(
     number,
     complement,
     floors,
+    units,
     towers,
     addressDisplay,
     latitude: input.latitude?.trim() ?? existing?.latitude ?? "",

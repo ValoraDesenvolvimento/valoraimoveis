@@ -146,6 +146,7 @@ export async function createSchema() {
         number VARCHAR(32) NOT NULL DEFAULT '',
         complement VARCHAR(64) NOT NULL DEFAULT '',
         floors INT NOT NULL DEFAULT 0,
+        units INT NOT NULL DEFAULT 0,
         towers INT NOT NULL DEFAULT 0,
         address_display VARCHAR(32) NOT NULL DEFAULT 'street',
         latitude VARCHAR(32) NOT NULL DEFAULT '',
@@ -221,6 +222,7 @@ export async function createSchema() {
       number TEXT NOT NULL DEFAULT '',
       complement TEXT NOT NULL DEFAULT '',
       floors INTEGER NOT NULL DEFAULT 0,
+      units INTEGER NOT NULL DEFAULT 0,
       towers INTEGER NOT NULL DEFAULT 0,
       address_display TEXT NOT NULL DEFAULT 'street',
       latitude TEXT NOT NULL DEFAULT '',
@@ -286,6 +288,7 @@ async function ensurePropertyColumnUpgrades() {
   if (provider === "postgres") {
     await dbExecute(`ALTER TABLE properties ADD COLUMN IF NOT EXISTS complement TEXT NOT NULL DEFAULT ''`);
     await dbExecute(`ALTER TABLE properties ADD COLUMN IF NOT EXISTS floors INTEGER NOT NULL DEFAULT 0`);
+    await dbExecute(`ALTER TABLE properties ADD COLUMN IF NOT EXISTS units INTEGER NOT NULL DEFAULT 0`);
     await dbExecute(`ALTER TABLE properties ADD COLUMN IF NOT EXISTS towers INTEGER NOT NULL DEFAULT 0`);
     // address_display DEFAULT 'all' na migração: imóveis antigos mantêm endereço completo
     // no público até o admin escolher outra política. Novos cadastros usam "street" no form.
@@ -315,6 +318,7 @@ async function ensurePropertyColumnUpgrades() {
     );
     await dbExecute(`UPDATE properties SET complement = '' WHERE complement IS NULL`);
     await dbExecute(`UPDATE properties SET floors = 0 WHERE floors IS NULL`);
+    await dbExecute(`UPDATE properties SET units = 0 WHERE units IS NULL`);
     await dbExecute(`UPDATE properties SET towers = 0 WHERE towers IS NULL`);
     await dbExecute(`UPDATE properties SET social_bathrooms = 0 WHERE social_bathrooms IS NULL`);
     await dbExecute(`UPDATE properties SET condo_exempt = FALSE WHERE condo_exempt IS NULL`);
@@ -338,6 +342,7 @@ async function ensurePropertyColumnUpgrades() {
   const columns = [
     ["complement", "VARCHAR(64) NOT NULL DEFAULT ''"],
     ["floors", "INT NOT NULL DEFAULT 0"],
+    ["units", "INT NOT NULL DEFAULT 0"],
     ["towers", "INT NOT NULL DEFAULT 0"],
     ["address_display", "VARCHAR(32) NOT NULL DEFAULT 'all'"],
     ["iptu_period", "VARCHAR(16) NOT NULL DEFAULT 'anual'"],
@@ -360,6 +365,7 @@ async function ensurePropertyColumnUpgrades() {
   try {
     await dbExecute(`UPDATE properties SET complement = '' WHERE complement IS NULL`);
     await dbExecute(`UPDATE properties SET floors = 0 WHERE floors IS NULL`);
+    await dbExecute(`UPDATE properties SET units = 0 WHERE units IS NULL`);
     await dbExecute(`UPDATE properties SET towers = 0 WHERE towers IS NULL`);
     await dbExecute(`UPDATE properties SET social_bathrooms = 0 WHERE social_bathrooms IS NULL`);
     await dbExecute(`UPDATE properties SET condo_exempt = 0 WHERE condo_exempt IS NULL`);

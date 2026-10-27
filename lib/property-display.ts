@@ -33,6 +33,7 @@ export function hydrateProperty(property: Property): Property {
     ...property,
     complement: property.complement ?? "",
     floors: property.floors ?? 0,
+    units: property.units ?? 0,
     towers: property.towers ?? 0,
     addressDisplay,
     socialBathrooms: property.socialBathrooms ?? 0,

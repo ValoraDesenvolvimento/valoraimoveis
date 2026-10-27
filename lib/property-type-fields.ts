@@ -22,6 +22,7 @@ export type PropertyFieldVisibility = {
   area: boolean;
   landArea: boolean;
   floors: boolean;
+  units: boolean;
   towers: boolean;
   complement: boolean;
   condo: boolean;
@@ -47,6 +48,7 @@ export function getFieldVisibility(type: string): PropertyFieldVisibility {
     area: !isLand,
     landArea: isHouse || isLand,
     floors: isUnit,
+    units: isUnit,
     towers: isUnit,
     complement: isUnit,
     condo: !isLand,

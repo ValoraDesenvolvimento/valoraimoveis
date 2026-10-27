@@ -7,9 +7,10 @@ import {
 } from "@/lib/property-type-fields";
 
 describe("property-type-fields", () => {
-  it("apartamento mostra andares/torres e esconde área terreno", () => {
+  it("apartamento mostra andares/unidades/torres e esconde área terreno", () => {
     const visibility = getFieldVisibility("Apartamento");
     expect(visibility.floors).toBe(true);
+    expect(visibility.units).toBe(true);
     expect(visibility.towers).toBe(true);
     expect(visibility.complement).toBe(true);
     expect(visibility.landArea).toBe(false);
@@ -21,6 +22,7 @@ describe("property-type-fields", () => {
       const visibility = getFieldVisibility(type);
       expect(visibility.landArea).toBe(true);
       expect(visibility.floors).toBe(false);
+      expect(visibility.units).toBe(false);
       expect(visibility.towers).toBe(false);
       expect(visibility.socialBathrooms).toBe(true);
       expect(visibility.roomFlags).toBe(true);

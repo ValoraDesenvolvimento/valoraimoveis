@@ -68,6 +68,7 @@ type FormState = {
   number: string;
   complement: string;
   floors: string;
+  units: string;
   towers: string;
   addressDisplay: AddressDisplay;
   neighborhood: string;
@@ -111,6 +112,7 @@ function emptyForm(): FormState {
     number: "",
     complement: "",
     floors: "",
+    units: "",
     towers: "",
     addressDisplay: "street",
     neighborhood: "",
@@ -155,6 +157,7 @@ function fromProperty(property: Property): FormState {
     number: property.number,
     complement: property.complement ?? "",
     floors: property.floors ? formatIntegerMask(String(property.floors)) : "",
+    units: property.units ? formatIntegerMask(String(property.units)) : "",
     towers: property.towers ? formatIntegerMask(String(property.towers)) : "",
     addressDisplay: property.addressDisplay ?? "street",
     neighborhood: property.neighborhood,
@@ -302,6 +305,7 @@ export function PropertyForm({ initialProperty = null }: PropertyFormProps) {
       number: form.number,
       complement: form.complement,
       floors: Number(form.floors) || 0,
+      units: Number(form.units) || 0,
       towers: Number(form.towers) || 0,
       addressDisplay: form.addressDisplay,
       neighborhood: form.neighborhood,
@@ -743,6 +747,7 @@ export function PropertyForm({ initialProperty = null }: PropertyFormProps) {
                   number: form.number,
                   complement: form.complement,
                   floors: form.floors,
+                  units: form.units,
                   towers: form.towers,
                   addressDisplay: form.addressDisplay,
                   neighborhood: form.neighborhood,

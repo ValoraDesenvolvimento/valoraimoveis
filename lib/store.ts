@@ -84,6 +84,7 @@ async function normalizeProperty(
   const number = input.number?.trim() ?? existing?.number ?? "";
   const complement = input.complement?.trim() ?? existing?.complement ?? "";
   const floors = Number(input.floors ?? existing?.floors) || 0;
+  const units = Number(input.units ?? existing?.units) || 0;
   const towers = Number(input.towers ?? existing?.towers) || 0;
   const addressDisplay = normalizeAddressDisplay(
     input.addressDisplay ?? existing?.addressDisplay ?? "street",
@@ -130,6 +131,7 @@ async function normalizeProperty(
     number,
     complement,
     floors,
+    units,
     towers,
     addressDisplay,
     latitude: input.latitude?.trim() ?? existing?.latitude ?? "",
@@ -201,6 +203,7 @@ function propertyParams(property: Property) {
     property.number,
     property.complement,
     property.floors,
+    property.units,
     property.towers,
     property.addressDisplay,
     property.latitude,
@@ -248,7 +251,7 @@ async function saveProperty(property: Property) {
   await dbExecute(
     `INSERT INTO properties (
       id, slug, title, location, location_full, city, neighborhood, state,
-      cep, address, number, complement, floors, towers, address_display, latitude, longitude, type, type_label,
+      cep, address, number, complement, floors, units, towers, address_display, latitude, longitude, type, type_label,
       price, price_label, ref, status, bedrooms, suites, bathrooms, social_bathrooms, parking,
       area, built_area, land_area, image, images, featured, highlight,
       description, condo, condo_exempt, iptu, iptu_period, iptu_exempt, rooms, leisure, extras, proximities, custom_fields, rooms_custom_fields, location_custom_fields, broker,
@@ -262,7 +265,7 @@ async function updateStoredProperty(property: Property) {
   await dbExecute(
     `UPDATE properties SET
       slug = ?, title = ?, location = ?, location_full = ?, city = ?, neighborhood = ?, state = ?,
-      cep = ?, address = ?, number = ?, complement = ?, floors = ?, towers = ?, address_display = ?,
+      cep = ?, address = ?, number = ?, complement = ?, floors = ?, units = ?, towers = ?, address_display = ?,
       latitude = ?, longitude = ?,
       type = ?, type_label = ?,
       price = ?, price_label = ?, ref = ?, status = ?, bedrooms = ?, suites = ?, bathrooms = ?,
@@ -286,6 +289,7 @@ async function updateStoredProperty(property: Property) {
       property.number,
       property.complement,
       property.floors,
+      property.units,
       property.towers,
       property.addressDisplay,
       property.latitude,

@@ -27,6 +27,7 @@ export type AddressFormSlice = {
   number: string;
   complement: string;
   floors: string;
+  units: string;
   towers: string;
   neighborhood: string;
   city: string;
@@ -247,10 +248,10 @@ export function PropertyAddressFields({
         </div>
       </div>
 
-      {fieldVisibility.floors || fieldVisibility.towers ? (
+      {fieldVisibility.floors || fieldVisibility.units || fieldVisibility.towers ? (
         <div className="space-y-5 border-t border-line pt-6">
           <p className="label">Edifício / condomínio</p>
-          <div className="grid md:grid-cols-2 gap-5">
+          <div className="grid md:grid-cols-3 gap-5">
             {fieldVisibility.floors ? (
               <div>
                 <Label htmlFor="property-floors">Número de andares</Label>
@@ -261,6 +262,21 @@ export function PropertyAddressFields({
                   value={values.floors}
                   onChange={(event) =>
                     onChange({ floors: formatIntegerMask(event.target.value, 3) })
+                  }
+                />
+              </div>
+            ) : null}
+
+            {fieldVisibility.units ? (
+              <div>
+                <Label htmlFor="property-units">Número de unidades</Label>
+                <Input
+                  id="property-units"
+                  inputMode="numeric"
+                  placeholder="Ex.: 48"
+                  value={values.units}
+                  onChange={(event) =>
+                    onChange({ units: formatIntegerMask(event.target.value, 4) })
                   }
                 />
               </div>
