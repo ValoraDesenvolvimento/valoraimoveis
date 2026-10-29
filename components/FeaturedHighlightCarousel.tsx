@@ -71,24 +71,24 @@ export function FeaturedHighlightCarousel({ properties }: FeaturedHighlightCarou
           </Link>
 
           {showControls ? (
-            <div className="absolute bottom-3 right-3 sm:bottom-5 sm:right-5 flex items-center gap-2">
+            <>
               <button
                 type="button"
-                className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full bg-white/95 text-ink shadow-lg hover:bg-white transition-colors"
+                className="absolute left-3 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-ink shadow-lg transition-colors hover:bg-white sm:left-4 sm:h-12 sm:w-12"
                 aria-label="Destaque anterior"
                 onClick={() => goTo(index - 1)}
               >
-                <ChevronLeft className="h-5 w-5" />
+                <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
               </button>
               <button
                 type="button"
-                className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full bg-white/95 text-ink shadow-lg hover:bg-white transition-colors"
+                className="absolute right-3 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-ink shadow-lg transition-colors hover:bg-white sm:right-4 sm:h-12 sm:w-12"
                 aria-label="Próximo destaque"
                 onClick={() => goTo(index + 1)}
               >
-                <ChevronRight className="h-5 w-5" />
+                <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
               </button>
-            </div>
+            </>
           ) : null}
         </div>
 
