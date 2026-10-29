@@ -1,10 +1,16 @@
 import { WhatsAppIcon } from "@/components/icons/brands";
-import { whatsappLink } from "@/lib/contact";
+import { type CompanySettings, whatsappLink } from "@/lib/contact";
 
-export function WhatsAppButton() {
+type WhatsAppButtonProps = {
+  company: CompanySettings;
+};
+
+export function WhatsAppButton({ company }: WhatsAppButtonProps) {
+  if (!company.whatsappE164) return null;
+
   return (
     <a
-      href={whatsappLink()}
+      href={whatsappLink(undefined, company)}
       target="_blank"
       rel="noreferrer"
       className="fixed bottom-24 right-4 sm:bottom-8 sm:right-8 z-[100] w-14 h-14 sm:w-16 sm:h-16 bg-[#25D366] text-white rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform duration-300 group"

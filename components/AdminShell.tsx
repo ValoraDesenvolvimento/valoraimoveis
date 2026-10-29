@@ -6,10 +6,11 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ArrowUpRight, LogOut, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { TEAM_IMOVIES, TEAM_LOGIN, TEAM_USUARIOS } from "@/lib/routes";
+import { TEAM_EMPRESA, TEAM_IMOVIES, TEAM_LOGIN, TEAM_USUARIOS } from "@/lib/routes";
 
 const navItems = [
   { href: TEAM_IMOVIES, label: "Imóveis", icon: "fa-solid fa-building" },
+  { href: TEAM_EMPRESA, label: "Empresa", icon: "fa-solid fa-building-columns" },
   { href: TEAM_USUARIOS, label: "Usuários", icon: "fa-solid fa-users" },
 ];
 

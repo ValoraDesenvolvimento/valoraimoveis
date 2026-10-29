@@ -204,6 +204,30 @@ export async function createSchema() {
         INDEX idx_admin_users_default (is_default)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
+    await dbExecute(`
+      CREATE TABLE IF NOT EXISTS company_settings (
+        id VARCHAR(64) PRIMARY KEY,
+        company_name VARCHAR(160) NOT NULL DEFAULT '',
+        email VARCHAR(255) NOT NULL DEFAULT '',
+        emails JSON NULL,
+        phone_display VARCHAR(64) NOT NULL DEFAULT '',
+        phones JSON NULL,
+        whatsapp_display VARCHAR(64) NOT NULL DEFAULT '',
+        whatsapp_e164 VARCHAR(32) NOT NULL DEFAULT '',
+        instagram_handle VARCHAR(120) NOT NULL DEFAULT '',
+        instagram_url VARCHAR(255) NOT NULL DEFAULT '',
+        facebook_url VARCHAR(255) NOT NULL DEFAULT '',
+        cep VARCHAR(16) NOT NULL DEFAULT '',
+        address VARCHAR(255) NOT NULL DEFAULT '',
+        number VARCHAR(32) NOT NULL DEFAULT '',
+        complement VARCHAR(64) NOT NULL DEFAULT '',
+        neighborhood VARCHAR(120) NOT NULL DEFAULT '',
+        city VARCHAR(120) NOT NULL DEFAULT '',
+        state VARCHAR(8) NOT NULL DEFAULT '',
+        listing_visibility JSON NULL,
+        updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
     return;
   }
 
@@ -280,6 +304,30 @@ export async function createSchema() {
   `);
   await dbExecute(`CREATE INDEX IF NOT EXISTS idx_admin_users_email ON admin_users (email)`);
   await dbExecute(`CREATE INDEX IF NOT EXISTS idx_admin_users_default ON admin_users (is_default)`);
+  await dbExecute(`
+    CREATE TABLE IF NOT EXISTS company_settings (
+      id TEXT PRIMARY KEY,
+      company_name TEXT NOT NULL DEFAULT '',
+      email TEXT NOT NULL DEFAULT '',
+      emails JSONB NOT NULL DEFAULT '[]'::jsonb,
+      phone_display TEXT NOT NULL DEFAULT '',
+      phones JSONB NOT NULL DEFAULT '[]'::jsonb,
+      whatsapp_display TEXT NOT NULL DEFAULT '',
+      whatsapp_e164 TEXT NOT NULL DEFAULT '',
+      instagram_handle TEXT NOT NULL DEFAULT '',
+      instagram_url TEXT NOT NULL DEFAULT '',
+      facebook_url TEXT NOT NULL DEFAULT '',
+      cep TEXT NOT NULL DEFAULT '',
+      address TEXT NOT NULL DEFAULT '',
+      number TEXT NOT NULL DEFAULT '',
+      complement TEXT NOT NULL DEFAULT '',
+      neighborhood TEXT NOT NULL DEFAULT '',
+      city TEXT NOT NULL DEFAULT '',
+      state TEXT NOT NULL DEFAULT '',
+      listing_visibility JSONB NOT NULL DEFAULT '{}'::jsonb,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
 }
 
 async function ensurePropertyColumnUpgrades() {

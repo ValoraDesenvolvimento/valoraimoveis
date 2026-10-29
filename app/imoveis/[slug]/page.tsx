@@ -12,7 +12,8 @@ import {
   buildPublicMapQuery,
   shouldExposeExactCoordinates,
 } from "@/lib/address-display";
-import { contact, whatsappLink } from "@/lib/contact";
+import { getCompanySettings } from "@/lib/company-store";
+import { listingPhones, whatsappLink } from "@/lib/contact";
 import { getLocationMapsUrl } from "@/lib/maps";
 import { toPublicProperty } from "@/lib/public-property";
 import {
@@ -41,6 +42,7 @@ export default async function PropertyDetailsPage({ params }: PageProps) {
   if (!raw || raw.status !== "Publicado") notFound();
 
   const property = toPublicProperty(raw);
+  const company = await getCompanySettings();
   const related = (
     await listPropertiesPage({
       publishedOnly: true,
@@ -55,7 +57,9 @@ export default async function PropertyDetailsPage({ params }: PageProps) {
       : [];
   const whatsapp = whatsappLink(
     `Olá, tenho interesse no imóvel ${property.title} (Ref: ${property.ref}) e gostaria de mais informações.`,
+    company,
   );
+  const phonesOnListing = listingPhones(company);
   const addressDisplay = property.addressDisplay;
   const addressParts = {
     address: property.address,
@@ -268,30 +272,47 @@ export default async function PropertyDetailsPage({ params }: PageProps) {
                   <p className="text-xs text-muted break-words">{costParts.join(" / ")}</p>
                 ) : null}
               </div>
-              <div className="space-y-3 sm:space-y-4">
-                <a
-                  href={whatsapp}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center justify-center gap-3 w-full bg-brand hover:bg-brandhover text-white py-4 sm:py-5 rounded-2xl font-bold text-base sm:text-lg transition-all shadow-lg shadow-brand/20 hover:scale-[1.02]"
-                >
-                  <i className="fa-brands fa-whatsapp text-xl" />
-                  Tenho interesse neste imóvel
-                </a>
-                <button
-                  type="button"
-                  className="w-full border border-line hover:border-ink py-4 rounded-2xl font-bold text-ink transition-all"
-                >
-                  Agendar Visita
-                </button>
-              </div>
-              <div className="space-y-4 pt-8 border-t border-line">
-                <p className="text-xs font-medium text-muted">Prefere nos ligar?</p>
-                <p className="text-lg font-bold text-ink flex items-center gap-2">
-                  <i className="fa-solid fa-phone text-brand text-sm" />
-                  {contact.phoneDisplay}
-                </p>
-              </div>
+              {(company.listingVisibility.whatsapp && company.whatsappE164) ||
+              company.listingVisibility.scheduleVisit ? (
+                <div className="space-y-3 sm:space-y-4">
+                  {company.listingVisibility.whatsapp && company.whatsappE164 ? (
+                    <a
+                      href={whatsapp}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center justify-center gap-3 w-full bg-brand hover:bg-brandhover text-white py-4 sm:py-5 rounded-2xl font-bold text-base sm:text-lg transition-all shadow-lg shadow-brand/20 hover:scale-[1.02]"
+                    >
+                      <i className="fa-brands fa-whatsapp text-xl" />
+                      Tenho interesse neste imóvel
+                    </a>
+                  ) : null}
+                  {company.listingVisibility.scheduleVisit ? (
+                    <button
+                      type="button"
+                      className="w-full border border-line hover:border-ink py-4 rounded-2xl font-bold text-ink transition-all"
+                    >
+                      Agendar Visita
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
+              {phonesOnListing.length > 0 ? (
+                <div className="space-y-4 pt-8 border-t border-line">
+                  <p className="text-xs font-medium text-muted">Prefere nos ligar?</p>
+                  <div className="space-y-2">
+                    {phonesOnListing.map((phone) => (
+                      <a
+                        key={phone}
+                        href={`tel:${phone.replace(/\D/g, "")}`}
+                        className="text-lg font-bold text-ink flex items-center gap-2 hover:text-brand transition-colors"
+                      >
+                        <i className="fa-solid fa-phone text-brand text-sm" />
+                        {phone}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </div>
           </aside>
         </div>
@@ -361,17 +382,19 @@ export default async function PropertyDetailsPage({ params }: PageProps) {
         </section>
       </main>
 
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] md:hidden">
-        <a
-          href={whatsapp}
-          target="_blank"
-          rel="noreferrer"
-          className="flex items-center justify-center gap-3 w-full bg-brand text-white py-4 rounded-xl font-bold text-base shadow-lg shadow-brand/20"
-        >
-          <i className="fa-brands fa-whatsapp text-lg" />
-          Tenho interesse neste imóvel
-        </a>
-      </div>
+      {company.listingVisibility.whatsapp && company.whatsappE164 ? (
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] md:hidden">
+          <a
+            href={whatsapp}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center justify-center gap-3 w-full bg-brand text-white py-4 rounded-xl font-bold text-base shadow-lg shadow-brand/20"
+          >
+            <i className="fa-brands fa-whatsapp text-lg" />
+            Tenho interesse neste imóvel
+          </a>
+        </div>
+      ) : null}
     </SiteShell>
   );
 }

@@ -1,8 +1,20 @@
 import Image from "next/image";
 import Link from "next/link";
-import { contact } from "@/lib/contact";
+import {
+  formatCompanyAddress,
+  hasCompanyAddress,
+  publicEmails,
+  publicPhones,
+  type CompanySettings,
+} from "@/lib/contact";
 
-export function Footer() {
+type FooterProps = {
+  company: CompanySettings;
+};
+
+export function Footer({ company }: FooterProps) {
+  const address = formatCompanyAddress(company);
+
   return (
     <footer className="bg-ink text-white pt-24 pb-12">
       <div className="max-w-7xl mx-auto px-6">
@@ -10,7 +22,7 @@ export function Footer() {
           <div className="space-y-8">
             <Image
               src="/Logovalorawhite.png"
-              alt="Valora Imóveis"
+              alt={company.companyName || "Valora Imóveis"}
               width={180}
               height={40}
               className="h-10 w-auto object-contain"
@@ -20,31 +32,28 @@ export function Footer() {
               foco total na valorização do seu patrimônio.
             </p>
             <div className="flex gap-4">
-              <a
-                href={contact.instagramUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center hover:bg-brand hover:border-brand transition-all"
-                aria-label="Instagram"
-              >
-                <i className="fa-brands fa-instagram text-sm" />
-              </a>
-              {/* Temporariamente ocultos
-              <a
-                href="#"
-                className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center hover:bg-brand hover:border-brand transition-all"
-                aria-label="Facebook"
-              >
-                <i className="fa-brands fa-facebook-f text-sm" />
-              </a>
-              <a
-                href="#"
-                className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center hover:bg-brand hover:border-brand transition-all"
-                aria-label="LinkedIn"
-              >
-                <i className="fa-brands fa-linkedin-in text-sm" />
-              </a>
-              */}
+              {company.instagramUrl ? (
+                <a
+                  href={company.instagramUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center hover:bg-brand hover:border-brand transition-all"
+                  aria-label="Instagram"
+                >
+                  <i className="fa-brands fa-instagram text-sm" />
+                </a>
+              ) : null}
+              {company.facebookUrl ? (
+                <a
+                  href={company.facebookUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center hover:bg-brand hover:border-brand transition-all"
+                  aria-label="Facebook"
+                >
+                  <i className="fa-brands fa-facebook-f text-sm" />
+                </a>
+              ) : null}
             </div>
           </div>
 
@@ -81,33 +90,70 @@ export function Footer() {
               Contato
             </h4>
             <ul className="space-y-4 text-sm text-muted-foreground">
-              <li className="flex items-center gap-3">
-                <i className="fa-brands fa-whatsapp text-brand" />
-                <span>{contact.whatsappDisplay}</span>
-              </li>
-              <li className="flex items-center gap-3">
-                <i className="fa-solid fa-envelope text-brand" />
-                <a href={`mailto:${contact.email}`} className="hover:text-brand transition-colors">
-                  {contact.email}
-                </a>
-              </li>
-              <li className="flex items-center gap-3">
-                <i className="fa-brands fa-instagram text-brand" />
-                <a
-                  href={contact.instagramUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="hover:text-brand transition-colors"
-                >
-                  {contact.instagramHandle}
-                </a>
-              </li>
+              {company.whatsappDisplay ? (
+                <li className="flex items-center gap-3">
+                  <i className="fa-brands fa-whatsapp text-brand" />
+                  <span>{company.whatsappDisplay}</span>
+                </li>
+              ) : null}
+              {publicPhones(company).map((phone) => (
+                <li key={`phone-${phone}`} className="flex items-center gap-3">
+                  <i className="fa-solid fa-phone text-brand" />
+                  <a href={`tel:${phone.replace(/\D/g, "")}`} className="hover:text-brand transition-colors">
+                    {phone}
+                  </a>
+                </li>
+              ))}
+              {publicEmails(company).map((email) => (
+                <li key={`email-${email}`} className="flex items-center gap-3">
+                  <i className="fa-solid fa-envelope text-brand" />
+                  <a href={`mailto:${email}`} className="hover:text-brand transition-colors">
+                    {email}
+                  </a>
+                </li>
+              ))}
+              {company.instagramHandle ? (
+                <li className="flex items-center gap-3">
+                  <i className="fa-brands fa-instagram text-brand" />
+                  <a
+                    href={company.instagramUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="hover:text-brand transition-colors"
+                  >
+                    {company.instagramHandle}
+                  </a>
+                </li>
+              ) : null}
+              {company.facebookUrl ? (
+                <li className="flex items-center gap-3">
+                  <i className="fa-brands fa-facebook-f text-brand" />
+                  <a
+                    href={company.facebookUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="hover:text-brand transition-colors"
+                  >
+                    Facebook
+                  </a>
+                </li>
+              ) : null}
+              {hasCompanyAddress(company) ? (
+                <li className="flex items-start gap-3">
+                  <i className="fa-solid fa-location-dot text-brand mt-0.5" />
+                  <span>{address}</span>
+                </li>
+              ) : null}
             </ul>
           </div>
         </div>
 
         <div className="pt-12 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] uppercase tracking-widest text-muted-foreground">
-          <p>© 2026 Valora Imóveis. Todos os direitos reservados.</p>
+          <p>
+            © {new Date().getFullYear()}
+            {company.companyName ? ` ${company.companyName}.` : ""} Todos os direitos
+            reservados.
+          </p>
           <div className="flex gap-8">
             <a href="#" className="hover:text-white transition-colors">
               Política de Privacidade

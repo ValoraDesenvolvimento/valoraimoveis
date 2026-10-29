@@ -12,6 +12,7 @@ import { formatIntegerMask } from "@/lib/masks";
 import { getFieldVisibility } from "@/lib/property-type-fields";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   Select,
   SelectContent,
@@ -162,49 +163,38 @@ export function PropertyAddressFields({
 
           <div className="min-w-0">
             <Label>Estado</Label>
-            <Select
+            <SearchableSelect
               value={values.state || undefined}
               onValueChange={(uf) => onChange({ state: uf, city: "" })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o estado" />
-              </SelectTrigger>
-              <SelectContent>
-                {BRAZIL_STATES.map((state) => (
-                  <SelectItem key={state.uf} value={state.uf}>
-                    {state.name} ({state.uf})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder="Selecione o estado"
+              searchPlaceholder="Pesquisar estado..."
+              options={BRAZIL_STATES.map((state) => ({
+                value: state.uf,
+                label: `${state.name} (${state.uf})`,
+              }))}
+            />
           </div>
 
           <div className="min-w-0">
             <Label>Cidade</Label>
-            <Select
+            <SearchableSelect
               value={values.city || undefined}
               onValueChange={(city) => onChange({ city })}
               disabled={!values.state || loadingCities}
-            >
-              <SelectTrigger>
-                <SelectValue
-                  placeholder={
-                    !values.state
-                      ? "Selecione o estado primeiro"
-                      : loadingCities
-                        ? "Carregando cidades..."
-                        : "Selecione a cidade"
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {cityOptions.map((city) => (
-                  <SelectItem key={city} value={city}>
-                    {city}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder={
+                !values.state
+                  ? "Selecione o estado primeiro"
+                  : loadingCities
+                    ? "Carregando cidades..."
+                    : "Selecione a cidade"
+              }
+              searchPlaceholder="Pesquisar cidade..."
+              emptyMessage="Nenhuma cidade encontrada."
+              options={cityOptions.map((city) => ({
+                value: city,
+                label: city,
+              }))}
+            />
           </div>
 
           <div className="min-w-0">
